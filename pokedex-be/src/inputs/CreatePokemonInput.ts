@@ -1,5 +1,4 @@
 import { InputType, Field } from "type-graphql";
-import { Type } from "../models/Type";
 
 @InputType()
 export class CreatePokemonInput {

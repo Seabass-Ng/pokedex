@@ -1,6 +1,27 @@
-import { Entity, BaseEntity, Column, PrimaryColumn, OneToOne, JoinColumn } from "typeorm";
+import { Entity, BaseEntity, Column, PrimaryColumn, OneToMany } from "typeorm";
 import { ObjectType, Field, ID } from "type-graphql";
-import { Type } from "./Type";
+import { Evolution } from "./Evolution";
+
+export const TYPES = [
+  'normal',
+  'fire',
+  'water',
+  'grass',
+  'electric',
+  'ice',
+  'fighting',
+  'poison',
+  'ground',
+  'flying',
+  'psychic',
+  'bug',
+  'rock',
+  'ghost',
+  'dark',
+  'dragon',
+  'steel',
+  'fairy'
+];
 
 @Entity()
 @ObjectType()
@@ -21,13 +42,11 @@ export class Pokemon extends BaseEntity {
   @Column({ nullable: false })
   imageUrl: string;
 
-  @Field(() => Type)
-  @OneToOne(() => Type, { eager: true })
-  @JoinColumn()
-  type1: Type;
+  @Field(() => String)
+  @Column({ nullable: true })
+  type1: string;
 
-  @Field(() => Type)
-  @OneToOne(() => Type, { nullable: true, eager: true })
-  @JoinColumn()
-  type2: Type;
+  @Field(() => String)
+  @Column({ nullable: true })
+  type2: string;
 }

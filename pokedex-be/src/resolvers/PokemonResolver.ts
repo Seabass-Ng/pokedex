@@ -1,65 +1,46 @@
 import { Resolver, Query, Mutation, Arg } from "type-graphql";
-import { Pokemon } from "../models/Pokemon";
-import { Type } from '../models/Type';
+import { Pokemon, TYPES } from "../models/Pokemon";
 import { CreatePokemonInput } from "../inputs/CreatePokemonInput";
 import { UpdatePokemonInput } from "../inputs/UpdatePokemonInput";
-import { getConnection } from "typeorm";
 
 @Resolver()
 export class PokemonResolver {
   @Query(() => [Pokemon])
-  async pokemons() {
-    const connection = getConnection();
-    const pokemons = await connection
-      .getRepository(Pokemon)
-      .createQueryBuilder('pokemon')
-      .leftJoinAndSelect('pokemon.type1', 'type1')
-      .leftJoinAndSelect('pokemon.type2', 'type2')
-      .getMany();
+  async getPokemons() {
+    let pokemons = await Pokemon.find();
     return pokemons;
   }
 
   @Query(() => Pokemon)
-  async pokemon(@Arg("id") id: number) {
-    const connection = getConnection();
-    const pokemon = await connection
-      .getRepository(Pokemon)
-      .createQueryBuilder('pokemon')
-      .leftJoinAndSelect('pokemon.type1', 'type1')
-      .leftJoinAndSelect('pokemon.type2', 'type2')
-      .where('pokemon.id = :id', { id })
-      .getOne();
+  async getPokemon(@Arg("id") id: number) {
+    let pokemon = await Pokemon.findOne({ where: { id } });
     return pokemon;
   }
 
   @Mutation(() => Pokemon)
-  async createPokemon(@Arg("data") data: CreatePokemonInput) : Promise<Pokemon> {
-    const type1: Type | undefined = await Type.findOne({ where: { name: data.type1 } });
-    const type2: Type | undefined = await Type.findOne({ where: { name: data.type2 } });
-    const pokemon = Pokemon.create({
-      ...data,
-      type1,
-      type2,
-    });
-
+  async createPokemon(@Arg("data") data: CreatePokemonInput): Promise<Pokemon> {
+    if (TYPES.filter(type => type === data.type1).length === 0) {
+      throw new Error(`Type ${data.type1} not found`);
+    }
+    if (TYPES.filter(type => type === data.type2).length === 0) {
+      throw new Error(`Type ${data.type2} not found`);
+    }
+    const pokemon = Pokemon.create(data);
     await pokemon.save();
     return pokemon;
   }
 
   @Mutation(() => Pokemon)
   async updatePokemon(@Arg("id") id: number, @Arg("data") data: UpdatePokemonInput): Promise<Pokemon> {
+    if (data.type1 && TYPES.filter(type => type === data.type1).length === 0) {
+      throw new Error(`Type ${data.type1} not found`);
+    }
+    if (data.type2 && TYPES.filter(type => type === data.type2).length === 0) {
+      throw new Error(`Type ${data.type2} not found`);
+    }
     let pokemon = await Pokemon.findOne({ where: { id } });
     if (!pokemon) throw new Error("Pokemon not found!");
-
-    const type1: Type | undefined = await Type.findOne({ where: { name: data.type1 } });
-    const type2: Type | undefined = await Type.findOne({ where: { name: data.type2 } });
     Object.assign(pokemon, data);
-    if (type1) {
-      pokemon.type1 = type1;
-    }
-    if (type2) {
-      pokemon.type2 = type2;
-    }
     await pokemon.save();
     return pokemon;
   }
